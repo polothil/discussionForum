@@ -1,7 +1,6 @@
 let commentArr = new Array();
 const dummyUsers = ['user1', 'user2', 'user3', 'user4', 'user5'];
 
-// Fetching commentArr(if exists) from localstorage
 const defaultLoad = () => {
   let commentsString = localStorage.getItem('commentArr');
   if (commentsString !== null) {
@@ -15,12 +14,12 @@ const defaultLoad = () => {
   }
 };
 
-defaultLoad();
+defaultLoad(); // FetchcommentArr(if exists) from localstorage
 
-document.addEventListener('DOMContentLoaded', (params) => {
+document.addEventListener('DOMContentLoaded', () => {
   if (commentArr.length) renderComments();
 
-  // Added to get text input enter to replace add button
+  // Thread Input
   const commentInput = document.getElementById('comment');
   commentInput.addEventListener('keyup', (event) => {
     if (event.key === 'Enter') {
@@ -33,48 +32,47 @@ document.addEventListener('DOMContentLoaded', (params) => {
 
   // Listening to clicks on upvotes, downvotes and reply
   const commentsList = document.getElementById('commentsList');
-  commentsList.addEventListener('click', (event) => {
-    if (event.target.nodeName === 'A' || event.target.nodeName === 'BUTTON') {
-      let parts = event.target.id.split('-');
+
+  commentsList.addEventListener('click', (e) => {
+    if (e.target.classList.contains('clickable')) {
+      let parts = e.target.id.split('-');
       let type = parts[0];
       let id = parts[parts.length - 1];
-      let abc = event.target.id.split('reply-')[1];
-      if (type == 'reply') {
-        let inputElem = `
-					<li id="input-${abc}">
-					<div>
-						<input id="content-${abc}" class="comment-box" placeholder="Reply to discussion...."></input>
-					</div>
+      commentArr[id][type]++;
+      renderComments();
+      storeComments();
+    }
+
+    if (e.target.classList.contains('reply')) {
+      let parts = e.target.id.split('-');
+      let id = parts[parts.length - 1];
+      let inputElem = `
+					<li id="input-${id}">
+					  <div>
+					  	<input id="content-${id}" class="comment-box" placeholder="Reply to discussion...."></ input>
+					  </div>
 					</li>
 					`;
 
-        let childListElemId = `childlist-${event.target.id.split('reply-')[1]}`;
-        let childListElem = document.getElementById(childListElemId);
+      let childListElemId = `childlist-${id}`;
+      let childListElem = document.getElementById(childListElemId);
 
-        if (childListElem == null) {
-          childListElem = `<ul id="childlist-${
-            event.target.id.split('reply-')[1]
-          }"> ${inputElem} </ul>`;
-          document.getElementById(`comment-${abc}`).innerHTML += childListElem;
-        } else {
-          childListElem.innerHTML = inputElem + childListElem.innerHTML;
-        }
-
-        // Added to get text input enter to replace add button
-        replyId = `content-${abc}`;
-        const replyInput = document.getElementById(replyId);
-        replyInput.addEventListener('keyup', (event) => {
-          if (event.key === 'Enter') {
-            let content = replyInput.value;
-            let name = dummyUsers[Math.floor(Math.random() * 5)];
-            addComment(name, content, id);
-          }
-        });
-      } else if (type == 'upvotes' || type == 'downvotes') {
-        commentArr[id][type]++;
-        renderComments();
-        storeComments();
+      if (childListElem == null) {
+        childListElem = `<ul id="childlist-${id}"> ${inputElem} </ul>`;
+        document.getElementById(`comment-${id}`).innerHTML += childListElem;
+      } else {
+        childListElem.innerHTML = inputElem + childListElem.innerHTML;
       }
+
+      // Added to get text input enter to replace add button
+      const replyInput = document.getElementById(`content-${id}`);
+      replyInput.addEventListener('keyup', (event) => {
+        if (event.key === 'Enter') {
+          let content = replyInput.value;
+          let name = dummyUsers[Math.floor(Math.random() * 5)];
+          addComment(name, content, id);
+        }
+      });
     }
   });
 });
@@ -108,10 +106,10 @@ let renderComment = (comment) => {
 			 ${comment.content}
 			</div>
 			<div>
-				${comment.upvotes}<a href="#" role="button" id="upvotes-${id}">&and;   </a>
-				${comment.downvotes}<a href="#" role="button" id="downvotes-${id}">&or;   </a>
-				${cumVotes}<a href="#" id="downvotes-${id}">&#9733;   </a>
-				<a href="#" role="button" id="reply-${id}"> reply </a>
+				${comment.upvotes}<span role="button" class="clickable" id="upvotes-${id}">&and;   </span>
+				${comment.downvotes}<span  role="button" class="clickable" id="downvotes-${id}">&or;   </span>
+				${cumVotes}&#9733;  
+				<span role="button" class="reply" id="reply-${id}"> reply </span>
 			</div>`;
   if (comment.childrenIds.length != 0) {
     listElem += `<ul id="childlist-${id}">`;
@@ -162,7 +160,7 @@ class Comment {
     this.parentId = parentId;
   }
   static toJSONString(comment) {
-    // created JSON string to send/save on server
+    // create JSON string to send/save on server
     return `{
 			"id" : "${comment.id}",
 			"name" : "${comment.name}",
